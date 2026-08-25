@@ -1,0 +1,68 @@
+{
+    "name": "jgawlik/laravel-gallery",
+    "description": "A plugin-like image gallery package for Laravel applications.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "gallery",
+        "images",
+        "media",
+        "package"
+    ],
+    "authors": [
+        {
+            "name": "Jakub Gawlik",
+            "email": "jacob@example.com"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^13.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.10",
+        "laravel/pint": "^1.24",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jgawlik\\LaravelGallery\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jgawlik\\LaravelGallery\\Database\\Factories\\": "database/factories/",
+            "Jgawlik\\LaravelGallery\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test:coverage": "make test-coverage",
+        "analyse": "vendor/bin/phpstan analyse --no-progress --memory-limit=1G",
+        "format": "vendor/bin/pint",
+        "format:check": "vendor/bin/pint --test",
+        "lint": [
+            "@format:check",
+            "@analyse"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Jgawlik\\LaravelGallery\\GalleryServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
