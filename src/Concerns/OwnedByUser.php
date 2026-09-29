@@ -11,12 +11,8 @@ trait OwnedByUser
     /**
      * Check if the given user owns the model (which must have a user_id column).
      */
-    protected function ownsModel(?Authenticatable $user, mixed $model): bool
+    protected function ownsModel(Authenticatable $user, mixed $model): bool
     {
-        if ($user === null) {
-            return false;
-        }
-
         return (string) $model->user_id === (string) $user->getAuthIdentifier();
     }
 

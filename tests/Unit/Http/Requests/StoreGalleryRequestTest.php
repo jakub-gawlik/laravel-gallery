@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryRequest;
 use Illuminate\Validation\Rules\Unique;
+use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryRequest;
 
 it('is always authorized', function () {
     $request = new StoreGalleryRequest;

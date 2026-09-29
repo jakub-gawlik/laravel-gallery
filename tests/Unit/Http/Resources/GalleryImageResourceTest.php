@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Jgawlik\LaravelGallery\Http\Resources\GalleryImageResource;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Tests\TestCase;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 it('transforms a gallery image', function () {
     /** @var TestCase $this */

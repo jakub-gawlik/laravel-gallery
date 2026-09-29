@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery\Http\Requests;
 
+use Illuminate\Auth\Access\Response;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
+use Jgawlik\LaravelGallery\Models\Gallery;
+use Jgawlik\LaravelGallery\Models\GalleryImage;
 
 class StoreGalleryImagesRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize(): Response
     {
-        return true;
+        $gallery = $this->route('gallery');
+
+        return $gallery instanceof Gallery
+            ? Gate::inspect('create', [GalleryImage::class, $gallery])
+            : Response::deny();
     }
 
     /**

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use Jgawlik\LaravelGallery\Http\Controllers\GalleryController;
-use Jgawlik\LaravelGallery\Tests\TestCase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Jgawlik\LaravelGallery\Http\Controllers\GalleryController;
+use Jgawlik\LaravelGallery\Tests\TestCase;
 
 it('throws when storing a gallery image fails', function () {
     /** @var TestCase $this */

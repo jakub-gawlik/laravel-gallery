@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Tests\Fixtures\DenyAllGalleryImagePolicy;
 use Jgawlik\LaravelGallery\Tests\Fixtures\DenyAllGalleryPolicy;
 use Jgawlik\LaravelGallery\Tests\TestCase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Gate;
 
 beforeEach(function () {
     /** @var TestCase $this */

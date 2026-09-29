@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery\Database\Factories;
 
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
-use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends Factory<GalleryImage>

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery;
 
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Policies\GalleryImagePolicy;
 use Jgawlik\LaravelGallery\Policies\GalleryPolicy;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\ServiceProvider;
 
 class GalleryServiceProvider extends ServiceProvider
 {

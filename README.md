@@ -70,7 +70,16 @@ php artisan migrate
 
 ### API Endpoints
 
-All gallery routes are authenticated and scoped to the current user. Galleries and images created through the API are owned by the authenticated user and hidden from other users.
+All gallery routes are authenticated by default. Galleries and images created through the API are owned by the authenticated user, and the default policies respond with a 404 when anyone else tries to view or modify them, so records can't be probed.
+
+Ownership is enforced entirely through policies — route model binding is deliberately left unscoped. To expose galleries publicly (for example a guest-facing portfolio), register your own policy in a service provider and adjust the route middleware via the `gallery.middleware` config:
+
+```php
+use Illuminate\Support\Facades\Gate;
+use Jgawlik\LaravelGallery\Models\Gallery;
+
+Gate::policy(Gallery::class, YourGalleryPolicy::class);
+```
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|

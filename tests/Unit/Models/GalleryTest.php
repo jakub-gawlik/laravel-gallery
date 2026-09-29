@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Storage;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Tests\TestCase;
-use Illuminate\Support\Facades\Storage;
 
 it('has the correct fillable attributes', function () {
     $gallery = new Gallery;
@@ -73,14 +73,20 @@ it('scopes galleries to the current user', function () {
         ->and(Gallery::query()->ownedBy(null)->count())->toBe(0);
 });
 
-it('limits route binding to the current user', function () {
+it('keeps route binding neutral so consumers control visibility through policies', function () {
     /** @var TestCase $this */
     $this->actingAs(galleryUser(1));
 
-    $owned = Gallery::factory()->create(['user_id' => 1]);
-    Gallery::factory()->create(['user_id' => 2]);
+    $other = Gallery::factory()->create(['user_id' => 2]);
 
-    $resolved = (new Gallery)->resolveRouteBindingQuery(Gallery::query(), $owned->id)->first();
+    $resolved = (new Gallery)->resolveRouteBindingQuery(Gallery::query(), $other->id)->first();
 
-    expect($resolved?->id)->toBe($owned->id);
+    expect($resolved?->getKey())->toBe($other->id);
+});
+
+it('knows which user owns it', function () {
+    $gallery = Gallery::factory()->create(['user_id' => 1]);
+
+    expect($gallery->isOwnedBy(galleryUser(1)))->toBeTrue()
+        ->and($gallery->isOwnedBy(galleryUser(2)))->toBeFalse();
 });

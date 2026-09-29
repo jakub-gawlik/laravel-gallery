@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Tests\TestCase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     /** @var TestCase $this */
@@ -255,7 +255,7 @@ it('deletes a gallery image', function () {
     assert(is_string($path));
 
     /** @var GalleryImage $image */
-    $image =     $gallery->images()->create([
+    $image = $gallery->images()->create([
         'path' => $path,
         'disk' => 'public',
         'title' => 'Photo one',
@@ -283,7 +283,7 @@ it('deletes an image file from disk when an image is deleted', function () {
     assert(is_string($path));
 
     /** @var GalleryImage $image */
-    $image =     $gallery->images()->create([
+    $image = $gallery->images()->create([
         'path' => $path,
         'disk' => 'public',
         'title' => 'Photo one',

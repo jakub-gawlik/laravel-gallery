@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery\Http\Controllers;
 
-use Jgawlik\LaravelGallery\Http\Requests\GalleryIndexRequest;
-use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryRequest;
-use Jgawlik\LaravelGallery\Http\Requests\UpdateGalleryRequest;
-use Jgawlik\LaravelGallery\Http\Resources\GalleryResource;
-use Jgawlik\LaravelGallery\Models\Gallery;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
@@ -16,6 +11,11 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Jgawlik\LaravelGallery\Http\Requests\GalleryIndexRequest;
+use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryRequest;
+use Jgawlik\LaravelGallery\Http\Requests\UpdateGalleryRequest;
+use Jgawlik\LaravelGallery\Http\Resources\GalleryResource;
+use Jgawlik\LaravelGallery\Models\Gallery;
 use RuntimeException;
 
 class GalleryController extends Controller

@@ -3,11 +3,33 @@
 declare(strict_types=1);
 
 use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryImagesRequest;
+use Jgawlik\LaravelGallery\Models\Gallery;
 
-it('is always authorized', function () {
+it('denies authorization without a bound gallery', function () {
     $request = new StoreGalleryImagesRequest;
+    $request->setRouteResolver(fn () => null);
 
-    expect($request->authorize())->toBeTrue();
+    expect($request->authorize()->denied())->toBeTrue();
+});
+
+it('authorizes through the create gate for the bound gallery', function () {
+    $gallery = Gallery::factory()->create(['user_id' => 1]);
+
+    $request = StoreGalleryImagesRequest::create("/api/v1/galleries/{$gallery->id}/images", 'POST');
+    $request->setUserResolver(fn () => galleryUser());
+    $request->setRouteResolver(fn () => new class($gallery)
+    {
+        public function __construct(private Gallery $gallery) {}
+
+        public function parameter(string $name): Gallery
+        {
+            return $this->gallery;
+        }
+    });
+
+    auth()->setUser(galleryUser());
+
+    expect($request->authorize()->allowed())->toBeTrue();
 });
 
 it('validates nested image fields', function () {

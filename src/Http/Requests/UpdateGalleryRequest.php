@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery\Http\Requests;
 
+use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Jgawlik\LaravelGallery\Models\Gallery;
 
 class UpdateGalleryRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize(): Response
     {
-        return true;
+        $gallery = $this->route('gallery');
+
+        return $gallery instanceof Gallery
+            ? Gate::inspect('update', $gallery)
+            : Response::deny();
     }
 
     /**

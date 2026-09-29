@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery\Tests\Fixtures;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
-use Illuminate\Contracts\Auth\Authenticatable;
 
 class DenyAllGalleryImagePolicy
 {

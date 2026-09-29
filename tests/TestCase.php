@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery\Tests;
 
-use Jgawlik\LaravelGallery\GalleryServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Jgawlik\LaravelGallery\GalleryServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra

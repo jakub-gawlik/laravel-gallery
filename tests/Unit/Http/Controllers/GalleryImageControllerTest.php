@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Jgawlik\LaravelGallery\Http\Controllers\GalleryImageController;
 use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryImagesRequest;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Tests\TestCase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 it('throws when storing a gallery image fails', function () {
     /** @var TestCase $this */
@@ -152,10 +152,7 @@ it('cleans up already stored files when a later image fails to store', function 
 
     Storage::disk('public')->put($existingPath, 'content');
 
-    $request = new class([
-        ['file' => $successfulFile, 'title' => 'One'],
-        ['file' => $failingFile, 'title' => 'Two'],
-    ]) extends StoreGalleryImagesRequest
+    $request = new class([['file' => $successfulFile, 'title' => 'One'], ['file' => $failingFile, 'title' => 'Two']]) extends StoreGalleryImagesRequest
     {
         /**
          * @param  list<array<string, mixed>>  $images

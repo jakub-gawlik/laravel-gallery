@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Jgawlik\LaravelGallery\Tests\TestCase;
 use Illuminate\Auth\GenericUser;
+use Jgawlik\LaravelGallery\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);
 

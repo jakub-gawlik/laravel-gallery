@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Jgawlik\LaravelGallery\Http\Requests\GalleryIndexRequest;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\In;
+use Jgawlik\LaravelGallery\Http\Requests\GalleryIndexRequest;
 
 /**
  * @param  array<string, mixed>  $data

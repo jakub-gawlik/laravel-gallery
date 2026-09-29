@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery\Http\Controllers;
 
-use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryImagesRequest;
-use Jgawlik\LaravelGallery\Http\Resources\GalleryImageResource;
-use Jgawlik\LaravelGallery\Models\Gallery;
-use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryImagesRequest;
+use Jgawlik\LaravelGallery\Http\Resources\GalleryImageResource;
+use Jgawlik\LaravelGallery\Models\Gallery;
+use Jgawlik\LaravelGallery\Models\GalleryImage;
 use RuntimeException;
 
 class GalleryImageController extends Controller
@@ -46,7 +47,7 @@ class GalleryImageController extends Controller
                 foreach ($request->input('images') as $index => $image) {
                     $file = $request->file("images.{$index}.file");
 
-                    if (! $file instanceof \Illuminate\Http\UploadedFile) {
+                    if (! $file instanceof UploadedFile) {
                         throw new RuntimeException('Failed to store gallery image.');
                     }
 

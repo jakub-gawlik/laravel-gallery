@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Jgawlik\LaravelGallery\GalleryServiceProvider;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
@@ -9,8 +11,6 @@ use Jgawlik\LaravelGallery\Policies\GalleryImagePolicy;
 use Jgawlik\LaravelGallery\Policies\GalleryPolicy;
 use Jgawlik\LaravelGallery\Tests\Fixtures\TestMiddleware;
 use Jgawlik\LaravelGallery\Tests\TestCase;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Route;
 
 it('merges the gallery config', function () {
     /** @var TestCase $this */

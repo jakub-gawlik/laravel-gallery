@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace Jgawlik\LaravelGallery\Models;
 
-use Jgawlik\LaravelGallery\Concerns\OwnedByUser;
-use Jgawlik\LaravelGallery\Database\Factories\GalleryImageFactory;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use Jgawlik\LaravelGallery\Concerns\OwnedByUser;
+use Jgawlik\LaravelGallery\Contracts\Ownable;
+use Jgawlik\LaravelGallery\Database\Factories\GalleryImageFactory;
 
 /**
  * @property int $id
@@ -26,7 +27,7 @@ use Illuminate\Support\Facades\Storage;
  *
  * @method static Builder<static> query()
  */
-class GalleryImage extends Model
+class GalleryImage extends Model implements Ownable
 {
     /**
      * @use HasFactory<GalleryImageFactory>
@@ -74,20 +75,13 @@ class GalleryImage extends Model
         }
 
         return $query->whereHas('gallery', function (Builder $query) use ($userId): void {
-            /** @phpstan-ignore-next-line */
             $query->ownedBy($userId);
         });
     }
 
-    /**
-     * @param  Builder<static>  $query
-     * @return Builder<static>
-     */
-    public function resolveRouteBindingQuery($query, $value, $field = null): Builder
+    public function isOwnedBy(Authenticatable $user): bool
     {
-        return parent::resolveRouteBindingQuery($query, $value, $field)
-            /** @phpstan-ignore-next-line */
-            ->ownedBy(request()->user() ?? auth()->user());
+        return $this->gallery->isOwnedBy($user);
     }
 
     /**
