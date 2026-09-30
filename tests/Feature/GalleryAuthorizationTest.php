@@ -74,6 +74,19 @@ it('denies uploading images when the create gate fails', function () {
         ->assertForbidden();
 });
 
+it('denies updating an image when the update gate fails', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->create();
+
+    /** @var GalleryImage $image */
+    $image = GalleryImage::factory()->for($gallery)->create();
+
+    $this->putJson("/api/v1/galleries/{$gallery->id}/images/{$image->id}", [
+        'title' => 'New title',
+    ])
+        ->assertForbidden();
+});
+
 it('denies deleting an image when the delete gate fails', function () {
     /** @var TestCase $this */
     $gallery = Gallery::factory()->create();

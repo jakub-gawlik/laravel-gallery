@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryImagesRequest;
+use Jgawlik\LaravelGallery\Http\Requests\UpdateGalleryImageRequest;
 use Jgawlik\LaravelGallery\Http\Resources\GalleryImageResource;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
@@ -78,6 +79,20 @@ class GalleryImageController extends Controller
         return GalleryImageResource::collection(collect($storedImages))
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function update(
+        UpdateGalleryImageRequest $request,
+        Gallery $gallery,
+        GalleryImage $image
+    ): GalleryImageResource {
+        abort_unless($image->gallery_id === $gallery->id, 404);
+
+        Gate::authorize('update', $image);
+
+        $image->update($request->validated());
+
+        return new GalleryImageResource($image);
     }
 
     public function destroy(Gallery $gallery, GalleryImage $image): Response

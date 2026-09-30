@@ -15,6 +15,11 @@ class DenyAllGalleryImagePolicy
         return false;
     }
 
+    public function update(?Authenticatable $user, GalleryImage $image): bool
+    {
+        return false;
+    }
+
     public function delete(?Authenticatable $user, GalleryImage $image): bool
     {
         return false;

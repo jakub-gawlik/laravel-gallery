@@ -243,6 +243,61 @@ it('shows gallery images on the gallery response', function () {
         ->assertJsonPath('data.images.0.description', 'Test image description');
 });
 
+it('updates a gallery image', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->create();
+
+    /** @var GalleryImage $image */
+    $image = GalleryImage::factory()->for($gallery)->create([
+        'title' => 'Old title',
+        'sort_order' => 1,
+    ]);
+
+    $this->putJson("/api/v1/galleries/{$gallery->id}/images/{$image->id}", [
+        'title' => 'New title',
+        'description' => 'New description',
+        'alt_text' => 'New alt text',
+        'sort_order' => 5,
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.id', $image->id)
+        ->assertJsonPath('data.title', 'New title')
+        ->assertJsonPath('data.description', 'New description')
+        ->assertJsonPath('data.alt_text', 'New alt text')
+        ->assertJsonPath('data.sort_order', 5);
+
+    $image->refresh();
+
+    expect($image->title)->toBe('New title')
+        ->and($image->description)->toBe('New description')
+        ->and($image->alt_text)->toBe('New alt text')
+        ->and($image->sort_order)->toBe(5);
+});
+
+it('updates only the provided gallery image fields', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->create();
+
+    /** @var GalleryImage $image */
+    $image = GalleryImage::factory()->for($gallery)->create([
+        'title' => 'Old title',
+        'description' => 'Old description',
+        'sort_order' => 3,
+    ]);
+
+    $this->patchJson("/api/v1/galleries/{$gallery->id}/images/{$image->id}", [
+        'title' => 'New title',
+    ])
+        ->assertOk()
+        ->assertJsonPath('data.title', 'New title');
+
+    $image->refresh();
+
+    expect($image->title)->toBe('New title')
+        ->and($image->description)->toBe('Old description')
+        ->and($image->sort_order)->toBe(3);
+});
+
 it('deletes a gallery image', function () {
     /** @var TestCase $this */
     Storage::fake('public');

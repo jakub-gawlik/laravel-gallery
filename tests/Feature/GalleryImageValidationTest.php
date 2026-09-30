@@ -81,6 +81,34 @@ it('accepts an optional title and description for each image', function () {
         ->assertJsonPath('data.0.description', 'A nice photo');
 });
 
+it('rejects invalid fields when updating an image', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->create();
+
+    $image = GalleryImage::factory()->for($gallery)->create();
+
+    $this->putJson("/api/v1/galleries/{$gallery->id}/images/{$image->id}", [
+        'title' => str_repeat('a', 256),
+        'alt_text' => str_repeat('a', 256),
+        'sort_order' => 'not-an-integer',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['title', 'alt_text', 'sort_order']);
+});
+
+it('returns a 404 when updating an image from the wrong gallery', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->create();
+    $otherGallery = Gallery::factory()->create();
+
+    $image = GalleryImage::factory()->for($otherGallery)->create();
+
+    $this->putJson("/api/v1/galleries/{$gallery->id}/images/{$image->id}", [
+        'title' => 'New title',
+    ])
+        ->assertNotFound();
+});
+
 it('returns a 404 when deleting an image from the wrong gallery', function () {
     /** @var TestCase $this */
     $gallery = Gallery::factory()->create();

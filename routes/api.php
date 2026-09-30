@@ -9,5 +9,5 @@ use Jgawlik\LaravelGallery\Http\Controllers\GalleryImageController;
 Route::prefix('api/v1')->middleware(config('gallery.middleware', ['api', 'auth']))->group(function (): void {
     Route::apiResource('galleries', GalleryController::class);
 
-    Route::resource('galleries.images', GalleryImageController::class)->only(['store', 'destroy']);
+    Route::resource('galleries.images', GalleryImageController::class)->only(['store', 'update', 'destroy']);
 });
