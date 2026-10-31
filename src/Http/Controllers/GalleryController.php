@@ -8,15 +8,15 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Jgawlik\LaravelGallery\Actions\StoreGalleryCover;
 use Jgawlik\LaravelGallery\Http\Requests\GalleryIndexRequest;
 use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryRequest;
 use Jgawlik\LaravelGallery\Http\Requests\UpdateGalleryRequest;
 use Jgawlik\LaravelGallery\Http\Resources\GalleryResource;
 use Jgawlik\LaravelGallery\Models\Gallery;
-use RuntimeException;
 
 class GalleryController extends Controller
 {
@@ -41,7 +41,7 @@ class GalleryController extends Controller
         return GalleryResource::collection($query->paginate($request->validatedPerPage()));
     }
 
-    public function store(StoreGalleryRequest $request): GalleryResource
+    public function store(StoreGalleryRequest $request, StoreGalleryCover $storeCover): GalleryResource
     {
         Gate::authorize('create', Gallery::class);
 
@@ -52,15 +52,22 @@ class GalleryController extends Controller
 
         $slug = $data['slug'] ?? $this->generateUniqueSlug(Str::slug($data['name']), $user->getAuthIdentifier());
 
-        $gallery = Gallery::create([
-            'user_id' => $user->getAuthIdentifier(),
-            'name' => $data['name'],
-            'slug' => $slug,
-            'description' => $data['description'] ?? null,
-            'image_path' => $request->hasFile('image')
-                ? $this->storeImage($request->file('image'))
-                : null,
-        ]);
+        $gallery = DB::transaction(function () use ($request, $storeCover, $data, $user, $slug): Gallery {
+            $gallery = Gallery::create([
+                'user_id' => $user->getAuthIdentifier(),
+                'name' => $data['name'],
+                'slug' => $slug,
+                'description' => $data['description'] ?? null,
+            ]);
+
+            $cover = $request->file('image');
+
+            if ($cover instanceof UploadedFile) {
+                $storeCover($gallery, $cover);
+            }
+
+            return $gallery;
+        });
 
         return new GalleryResource($gallery->load('images'));
     }
@@ -72,7 +79,7 @@ class GalleryController extends Controller
         return new GalleryResource($gallery->load('images'));
     }
 
-    public function update(UpdateGalleryRequest $request, Gallery $gallery): GalleryResource
+    public function update(UpdateGalleryRequest $request, Gallery $gallery, StoreGalleryCover $storeCover): GalleryResource
     {
         Gate::authorize('update', $gallery);
 
@@ -82,19 +89,15 @@ class GalleryController extends Controller
             $data['slug'] = $this->generateUniqueSlug(Str::slug($data['name']), $gallery->user_id, $gallery->id);
         }
 
-        if ($request->hasFile('image')) {
-            $newImagePath = $this->storeImage($request->file('image'));
-
-            if ($gallery->image_path) {
-                Storage::disk((string) config('gallery.disk', 'public'))->delete($gallery->image_path);
-            }
-
-            $data['image_path'] = $newImagePath;
-        }
-
         unset($data['image']);
 
         $gallery->update($data);
+
+        $cover = $request->file('image');
+
+        if ($cover instanceof UploadedFile) {
+            $storeCover($gallery, $cover);
+        }
 
         $gallery->refresh()->load('images');
 
@@ -108,20 +111,6 @@ class GalleryController extends Controller
         $gallery->delete();
 
         return response()->noContent();
-    }
-
-    private function storeImage(UploadedFile $image): string
-    {
-        $path = $image->store(
-            (string) config('gallery.path', 'galleries'),
-            (string) config('gallery.disk', 'public')
-        );
-
-        if ($path === false) {
-            throw new RuntimeException('Failed to store gallery image.');
-        }
-
-        return $path;
     }
 
     private function generateUniqueSlug(string $slug, int|string $userId, ?int $excludeId = null): string

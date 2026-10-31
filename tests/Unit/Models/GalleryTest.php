@@ -16,6 +16,11 @@ it('has the correct fillable attributes', function () {
         'slug',
         'description',
         'image_path',
+        'image_thumbnail_path',
+        'image_width',
+        'image_height',
+        'image_thumbnail_width',
+        'image_thumbnail_height',
     ]);
 });
 
@@ -89,4 +94,72 @@ it('knows which user owns it', function () {
 
     expect($gallery->isOwnedBy(galleryUser(1)))->toBeTrue()
         ->and($gallery->isOwnedBy(galleryUser(2)))->toBeFalse();
+});
+
+it('deletes its cover image and thumbnail when deleted', function () {
+    /** @var TestCase $this */
+    Storage::fake('public');
+
+    $gallery = Gallery::factory()->withImageThumbnail()->create();
+
+    Storage::disk('public')->put((string) $gallery->image_path, 'cover');
+    Storage::disk('public')->put((string) $gallery->image_thumbnail_path, 'thumb');
+
+    $gallery->delete();
+
+    Storage::disk('public')->assertMissing((string) $gallery->image_path);
+    Storage::disk('public')->assertMissing((string) $gallery->image_thumbnail_path);
+});
+
+it('uses the configured disk for its cover image', function () {
+    config(['gallery.disk' => 's3']);
+
+    expect(Gallery::factory()->make()->diskName())->toBe('s3');
+});
+
+it('exposes the cover image and thumbnail urls', function () {
+    /** @var TestCase $this */
+    Storage::fake('public');
+
+    $gallery = Gallery::factory()->withImageThumbnail()->make([
+        'image_path' => 'galleries/cover.jpg',
+        'image_thumbnail_path' => 'galleries/thumbs/cover.webp',
+    ]);
+
+    expect($gallery->hasImageThumbnail())->toBeTrue()
+        ->and($gallery->imageUrl())->toBe(Storage::disk('public')->url('galleries/cover.jpg'))
+        ->and($gallery->imageThumbnailUrl())->toBe(Storage::disk('public')->url('galleries/thumbs/cover.webp'))
+        ->and($gallery->sourceImagePath())->toBe('galleries/cover.jpg')
+        ->and($gallery->currentThumbnailPath())->toBe('galleries/thumbs/cover.webp');
+});
+
+it('falls back to the cover image url when there is no thumbnail', function () {
+    /** @var TestCase $this */
+    Storage::fake('public');
+
+    $gallery = Gallery::factory()->withImage()->make(['image_path' => 'galleries/cover.jpg']);
+
+    expect($gallery->hasImageThumbnail())->toBeFalse()
+        ->and($gallery->imageThumbnailUrl())->toBe($gallery->imageUrl());
+});
+
+it('has no urls without a cover image', function () {
+    $gallery = Gallery::factory()->make(['image_path' => null]);
+
+    expect($gallery->imageUrl())->toBeNull()
+        ->and($gallery->imageThumbnailUrl())->toBeNull()
+        ->and($gallery->sourceImagePath())->toBeNull()
+        ->and($gallery->currentThumbnailPath())->toBeNull();
+});
+
+it('records a generated cover thumbnail', function () {
+    $gallery = Gallery::factory()->withImage()->create();
+
+    $gallery->recordThumbnail('galleries/thumbs/cover.webp', 800, 450);
+
+    $fresh = $gallery->fresh();
+
+    expect($fresh?->image_thumbnail_path)->toBe('galleries/thumbs/cover.webp')
+        ->and($fresh?->image_thumbnail_width)->toBe(800)
+        ->and($fresh?->image_thumbnail_height)->toBe(450);
 });

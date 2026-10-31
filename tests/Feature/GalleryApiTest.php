@@ -127,9 +127,16 @@ it('creates a gallery with an uploaded image', function () {
 
     $gallery = Gallery::query()->firstOrFail();
 
-    expect($gallery->image_path)->not->toBeNull();
+    expect($gallery->image_path)->not->toBeNull()
+        ->and($gallery->image_width)->toBe(10)
+        ->and($gallery->image_height)->toBe(10)
+        ->and($gallery->image_thumbnail_path)->toStartWith('galleries/thumbs/');
     Storage::disk('public')->assertExists($gallery->image_path);
-    $response->assertJsonPath('data.image_url', Storage::disk('public')->url($gallery->image_path));
+    Storage::disk('public')->assertExists((string) $gallery->image_thumbnail_path);
+    $response->assertJsonPath('data.image_url', Storage::disk('public')->url($gallery->image_path))
+        ->assertJsonPath('data.image_thumbnail_url', Storage::disk('public')->url((string) $gallery->image_thumbnail_path))
+        ->assertJsonPath('data.image_thumbnail_width', 800)
+        ->assertJsonPath('data.image_thumbnail_height', 450);
 });
 
 it('updates a gallery with an uploaded image', function () {
@@ -137,12 +144,14 @@ it('updates a gallery with an uploaded image', function () {
     Storage::fake('public');
 
     Storage::disk('public')->put('galleries/existing.jpg', 'existing');
+    Storage::disk('public')->put('galleries/thumbs/existing.webp', 'existing thumb');
 
-    $gallery = Gallery::factory()->create([
+    $gallery = Gallery::factory()->withImageThumbnail()->create([
         'name' => 'Old Name',
         'slug' => 'old-name',
         'description' => 'Old description',
         'image_path' => 'galleries/existing.jpg',
+        'image_thumbnail_path' => 'galleries/thumbs/existing.webp',
     ]);
 
     $newImage = UploadedFile::fake()->image('updated.jpg');
@@ -163,10 +172,15 @@ it('updates a gallery with an uploaded image', function () {
 
     $gallery->refresh();
 
-    expect($gallery->image_path)->not->toBe('galleries/existing.jpg');
+    expect($gallery->image_path)->not->toBe('galleries/existing.jpg')
+        ->and($gallery->image_thumbnail_path)->not->toBe('galleries/thumbs/existing.webp')
+        ->and($gallery->image_thumbnail_path)->not->toBeNull();
     Storage::disk('public')->assertMissing('galleries/existing.jpg');
+    Storage::disk('public')->assertMissing('galleries/thumbs/existing.webp');
     Storage::disk('public')->assertExists($gallery->image_path);
-    $response->assertJsonPath('data.image_url', Storage::disk('public')->url($gallery->image_path));
+    Storage::disk('public')->assertExists((string) $gallery->image_thumbnail_path);
+    $response->assertJsonPath('data.image_url', Storage::disk('public')->url($gallery->image_path))
+        ->assertJsonPath('data.image_thumbnail_url', Storage::disk('public')->url((string) $gallery->image_thumbnail_path));
 });
 
 it('uploads multiple images to a gallery', function () {

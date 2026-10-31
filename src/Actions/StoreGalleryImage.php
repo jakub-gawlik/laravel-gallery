@@ -7,6 +7,7 @@ namespace Jgawlik\LaravelGallery\Actions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Image\ImageManager;
 use Illuminate\Support\Facades\Storage;
+use Jgawlik\LaravelGallery\Actions\Concerns\ProcessesUploadedImages;
 use Jgawlik\LaravelGallery\Jobs\GenerateGalleryThumbnail;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
@@ -22,6 +23,8 @@ use Throwable;
  */
 class StoreGalleryImage
 {
+    use ProcessesUploadedImages;
+
     public function __construct(
         private readonly ImageManager $images,
         private readonly GenerateThumbnail $generateThumbnail,
@@ -29,15 +32,19 @@ class StoreGalleryImage
 
     /**
      * @param  array{title?: string|null, description?: string|null, alt_text?: string|null, sort_order?: int}  $attributes
+     * @param  string|null  $directory  Sub-directory of the configured gallery path to store the file in.
      *
      * @throws RuntimeException When the original file cannot be written to the disk.
      */
-    public function __invoke(Gallery $gallery, UploadedFile $file, array $attributes = []): GalleryImage
-    {
+    public function __invoke(
+        Gallery $gallery,
+        UploadedFile $file,
+        array $attributes = [],
+        ?string $directory = null,
+    ): GalleryImage {
         $disk = (string) config('gallery.disk', 'public');
-        $path = (string) config('gallery.path', 'galleries');
 
-        $filePath = $file->store($path, $disk);
+        $filePath = $file->store($this->uploadDirectory($directory), $disk);
 
         if ($filePath === false) {
             throw new RuntimeException('Failed to store gallery image.');
@@ -57,7 +64,7 @@ class StoreGalleryImage
                 'sort_order' => $attributes['sort_order'] ?? ((int) $gallery->images()->max('sort_order') + 1),
             ]);
 
-            $this->generateThumbnail($image, $file);
+            $this->thumbnail($image, $file, fn () => GenerateGalleryThumbnail::dispatch($image)->afterCommit());
         } catch (Throwable $e) {
             Storage::disk($disk)->delete($filePath);
 
@@ -65,40 +72,5 @@ class StoreGalleryImage
         }
 
         return $image;
-    }
-
-    private function generateThumbnail(GalleryImage $image, UploadedFile $file): void
-    {
-        if (! config('gallery.thumbnails.enabled', true)) {
-            return;
-        }
-
-        if (config('gallery.thumbnails.queue', false)) {
-            GenerateGalleryThumbnail::dispatch($image)->afterCommit();
-
-            return;
-        }
-
-        try {
-            ($this->generateThumbnail)($image, $this->images->fromUpload($file));
-        } catch (Throwable $e) {
-            report($e);
-        }
-    }
-
-    /**
-     * Detect the (orientation-corrected) dimensions of the uploaded image.
-     *
-     * @return array{0: int|null, 1: int|null}
-     */
-    private function dimensions(UploadedFile $file): array
-    {
-        try {
-            return $this->images->driver()->dimensions($file->getContent());
-        } catch (Throwable $e) {
-            report($e);
-
-            return [null, null];
-        }
     }
 }

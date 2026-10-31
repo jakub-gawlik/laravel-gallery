@@ -57,6 +57,23 @@ it('appends to the end of the gallery when no sort order is given', function () 
         ->and($image->title)->toBeNull();
 });
 
+it('stores the original and its thumbnail in the given sub-directory', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->create(['slug' => 'summer-2026']);
+
+    $image = app(StoreGalleryImage::class)(
+        $gallery,
+        UploadedFile::fake()->image('photo.jpg', 1600, 900),
+        directory: '/'.$gallery->slug.'/',
+    );
+
+    expect($image->path)->toStartWith('galleries/summer-2026/')
+        ->and($image->thumbnail_path)->toStartWith('galleries/summer-2026/thumbs/');
+
+    Storage::disk('public')->assertExists($image->path);
+    Storage::disk('public')->assertExists((string) $image->thumbnail_path);
+});
+
 it('skips thumbnail generation when thumbnails are disabled', function () {
     /** @var TestCase $this */
     config(['gallery.thumbnails.enabled' => false]);

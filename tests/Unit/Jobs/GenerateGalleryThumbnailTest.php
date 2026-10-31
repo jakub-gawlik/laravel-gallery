@@ -7,6 +7,7 @@ use Illuminate\Image\Image;
 use Illuminate\Image\ImageManager;
 use Illuminate\Support\Facades\Queue;
 use Jgawlik\LaravelGallery\Actions\GenerateThumbnail;
+use Jgawlik\LaravelGallery\Contracts\Thumbnailable;
 use Jgawlik\LaravelGallery\Jobs\GenerateGalleryThumbnail;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Tests\TestCase;
@@ -32,17 +33,17 @@ it('delegates to the generate thumbnail action', function () {
 
     $generator = new class(app(ImageManager::class)) extends GenerateThumbnail
     {
-        public ?GalleryImage $generatedFor = null;
+        public ?Thumbnailable $generatedFor = null;
 
-        public function __invoke(GalleryImage $image, ?Image $source = null): GalleryImage
+        public function __invoke(Thumbnailable $target, ?Image $source = null): Thumbnailable
         {
-            $this->generatedFor = $image;
+            $this->generatedFor = $target;
 
-            return $image;
+            return $target;
         }
     };
 
     (new GenerateGalleryThumbnail($image))->handle($generator);
 
-    expect($generator->generatedFor?->is($image))->toBeTrue();
+    expect($generator->generatedFor)->toBe($image);
 });

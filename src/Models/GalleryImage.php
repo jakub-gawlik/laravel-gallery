@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 use Jgawlik\LaravelGallery\Concerns\OwnedByUser;
 use Jgawlik\LaravelGallery\Contracts\Ownable;
+use Jgawlik\LaravelGallery\Contracts\Thumbnailable;
 use Jgawlik\LaravelGallery\Database\Factories\GalleryImageFactory;
 
 /**
@@ -32,7 +33,7 @@ use Jgawlik\LaravelGallery\Database\Factories\GalleryImageFactory;
  *
  * @method static Builder<static> query()
  */
-class GalleryImage extends Model implements Ownable
+class GalleryImage extends Model implements Ownable, Thumbnailable
 {
     /**
      * @use HasFactory<GalleryImageFactory>
@@ -119,6 +120,25 @@ class GalleryImage extends Model implements Ownable
         if ($this->thumbnail_path) {
             $disk->delete($this->thumbnail_path);
         }
+    }
+
+    public function sourceImagePath(): ?string
+    {
+        return $this->path;
+    }
+
+    public function currentThumbnailPath(): ?string
+    {
+        return $this->thumbnail_path;
+    }
+
+    public function recordThumbnail(string $path, int $width, int $height): void
+    {
+        $this->forceFill([
+            'thumbnail_path' => $path,
+            'thumbnail_width' => $width,
+            'thumbnail_height' => $height,
+        ])->save();
     }
 
     /**

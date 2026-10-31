@@ -8,6 +8,7 @@ use Illuminate\Image\ImageException;
 use Illuminate\Support\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 use Jgawlik\LaravelGallery\Actions\GenerateThumbnail;
+use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Tests\TestCase;
 
@@ -115,8 +116,54 @@ it('throws when the thumbnail cannot be written to the disk', function () {
     expect($image->fresh()?->thumbnail_path)->toBeNull();
 });
 
-it('builds the thumbnail directory from the gallery path', function () {
-    config(['gallery.path' => '/uploads/galleries/', 'gallery.thumbnails.path' => '/small/']);
+it('places the thumbnail directory next to the source image', function () {
+    config(['gallery.thumbnails.path' => '/small/']);
 
-    expect(app(GenerateThumbnail::class)->directory())->toBe('uploads/galleries/small');
+    $action = app(GenerateThumbnail::class);
+
+    expect($action->directory(GalleryImage::factory()->make(['path' => 'uploads/galleries/photo.jpg'])))->toBe('uploads/galleries/small')
+        ->and($action->directory(GalleryImage::factory()->make(['path' => 'galleries/summer-2026/photo.jpg'])))->toBe('galleries/summer-2026/small')
+        ->and($action->directory(GalleryImage::factory()->make(['path' => 'photo.jpg'])))->toBe('small')
+        ->and($action->directory(Gallery::factory()->make(['image_path' => null])))->toBe('small');
+});
+
+it('generates a thumbnail for a gallery cover', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->create(['image_path' => 'galleries/cover.jpg']);
+    Storage::disk('public')->put('galleries/cover.jpg', fakeImageBytes());
+
+    $result = app(GenerateThumbnail::class)($gallery);
+
+    expect($result)->toBe($gallery)
+        ->and($gallery->image_thumbnail_path)->toStartWith('galleries/thumbs/')
+        ->and($gallery->image_thumbnail_path)->toEndWith('.webp')
+        ->and($gallery->image_thumbnail_width)->toBe(800)
+        ->and($gallery->image_thumbnail_height)->toBe(450)
+        ->and($gallery->fresh()?->image_thumbnail_path)->toBe($gallery->image_thumbnail_path);
+
+    Storage::disk('public')->assertExists((string) $gallery->image_thumbnail_path);
+});
+
+it('replaces an existing cover thumbnail and removes the old file', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->withImageThumbnail()->create([
+        'image_path' => 'galleries/cover.jpg',
+        'image_thumbnail_path' => 'galleries/thumbs/old.webp',
+    ]);
+    Storage::disk('public')->put('galleries/cover.jpg', fakeImageBytes());
+    Storage::disk('public')->put('galleries/thumbs/old.webp', 'old');
+
+    app(GenerateThumbnail::class)($gallery);
+
+    expect($gallery->image_thumbnail_path)->not->toBe('galleries/thumbs/old.webp');
+    Storage::disk('public')->assertMissing('galleries/thumbs/old.webp');
+    Storage::disk('public')->assertExists((string) $gallery->image_thumbnail_path);
+});
+
+it('throws when the gallery has no cover image', function () {
+    /** @var TestCase $this */
+    $gallery = Gallery::factory()->create(['image_path' => null]);
+
+    expect(fn () => app(GenerateThumbnail::class)($gallery))
+        ->toThrow(RuntimeException::class, 'There is no image to generate a thumbnail from.');
 });

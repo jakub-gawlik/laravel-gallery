@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Jgawlik\LaravelGallery\Concerns\OwnedByUser;
 use Jgawlik\LaravelGallery\Contracts\Ownable;
+use Jgawlik\LaravelGallery\Contracts\Thumbnailable;
 use Jgawlik\LaravelGallery\Database\Factories\GalleryFactory;
 
 /**
@@ -22,13 +23,18 @@ use Jgawlik\LaravelGallery\Database\Factories\GalleryFactory;
  * @property string $slug
  * @property string|null $description
  * @property string|null $image_path
+ * @property string|null $image_thumbnail_path
+ * @property int|null $image_width
+ * @property int|null $image_height
+ * @property int|null $image_thumbnail_width
+ * @property int|null $image_thumbnail_height
  * @property-read Collection<int, GalleryImage> $images
  *
  * @method static Builder<static> query()
  * @method static where(string $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
  * @method static Gallery create(array<string, mixed> $attributes = [])
  */
-class Gallery extends Model implements Ownable
+class Gallery extends Model implements Ownable, Thumbnailable
 {
     /**
      * @use HasFactory<GalleryFactory>
@@ -43,6 +49,18 @@ class Gallery extends Model implements Ownable
         'slug',
         'description',
         'image_path',
+        'image_thumbnail_path',
+        'image_width',
+        'image_height',
+        'image_thumbnail_width',
+        'image_thumbnail_height',
+    ];
+
+    protected $casts = [
+        'image_width' => 'integer',
+        'image_height' => 'integer',
+        'image_thumbnail_width' => 'integer',
+        'image_thumbnail_height' => 'integer',
     ];
 
     protected static function booted(): void
@@ -50,16 +68,81 @@ class Gallery extends Model implements Ownable
         static::deleting(function (Gallery $gallery): void {
             $gallery->images()->cursor()->each->delete();
 
-            if ($gallery->image_path) {
-                Storage::disk((string) config('gallery.disk', 'public'))
-                    ->delete($gallery->image_path);
-            }
+            $gallery->deleteImageFiles();
         });
     }
 
     protected static function newFactory(): GalleryFactory
     {
         return GalleryFactory::new();
+    }
+
+    /**
+     * The name of the storage disk holding the cover image and its thumbnail.
+     */
+    public function diskName(): string
+    {
+        return (string) config('gallery.disk', 'public');
+    }
+
+    /**
+     * The public URL of the cover image, if any.
+     */
+    public function imageUrl(): ?string
+    {
+        return $this->image_path !== null
+            ? Storage::disk($this->diskName())->url($this->image_path)
+            : null;
+    }
+
+    public function hasImageThumbnail(): bool
+    {
+        return $this->image_thumbnail_path !== null;
+    }
+
+    /**
+     * The public URL of the cover thumbnail, falling back to the cover image.
+     */
+    public function imageThumbnailUrl(): ?string
+    {
+        return $this->image_thumbnail_path !== null
+            ? Storage::disk($this->diskName())->url($this->image_thumbnail_path)
+            : $this->imageUrl();
+    }
+
+    /**
+     * Delete the cover image and its thumbnail from storage.
+     */
+    public function deleteImageFiles(): void
+    {
+        $disk = Storage::disk($this->diskName());
+
+        if ($this->image_path) {
+            $disk->delete($this->image_path);
+        }
+
+        if ($this->image_thumbnail_path) {
+            $disk->delete($this->image_thumbnail_path);
+        }
+    }
+
+    public function sourceImagePath(): ?string
+    {
+        return $this->image_path;
+    }
+
+    public function currentThumbnailPath(): ?string
+    {
+        return $this->image_thumbnail_path;
+    }
+
+    public function recordThumbnail(string $path, int $width, int $height): void
+    {
+        $this->forceFill([
+            'image_thumbnail_path' => $path,
+            'image_thumbnail_width' => $width,
+            'image_thumbnail_height' => $height,
+        ])->save();
     }
 
     /**

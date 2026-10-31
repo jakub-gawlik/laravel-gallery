@@ -12,7 +12,7 @@ to get galleries and image uploads via a clean, modern API.
 
 - Gallery CRUD API endpoints
 - Multiple image uploads per gallery
-- Automatic thumbnail generation (inline or queued) with a backfill command
+- Automatic thumbnail generation for images and gallery covers (inline or queued) with a backfill command
 - Configurable storage disk and path
 - Automatic file cleanup on deletion
 - Database migrations and model factories
@@ -124,6 +124,24 @@ curl -X POST http://your-app.test/api/v1/galleries \
   -F "image=@cover.jpg"
 ```
 
+The gallery response carries the cover image and its thumbnail, with the
+same fallback rules as gallery images:
+
+```json
+{
+  "id": 1,
+  "name": "Summer Photos",
+  "slug": "summer-photos",
+  "description": "A simple gallery",
+  "image_url": "/storage/galleries/abc123.jpg",
+  "image_width": 4000,
+  "image_height": 3000,
+  "image_thumbnail_url": "/storage/galleries/thumbs/def456.webp",
+  "image_thumbnail_width": 800,
+  "image_thumbnail_height": 450
+}
+```
+
 ### Uploading Images
 
 ```bash
@@ -158,18 +176,20 @@ fields fall back to the original so templates never need a null check.
 
 ### Thumbnails
 
-Every uploaded image gets a thumbnail generated through Laravel's `Image`
-facade: the original is EXIF-oriented, cover-cropped to the configured
-dimensions and encoded in the configured format. Thumbnails live next to the
-originals in the `thumbnails.path` sub-directory (`galleries/thumbs` by
-default) and are deleted together with the image.
+Every uploaded image and gallery cover gets a thumbnail generated through
+Laravel's `Image` facade: the original is EXIF-oriented, cover-cropped to the
+configured dimensions and encoded in the configured format. Thumbnails live
+next to the originals in the `thumbnails.path` sub-directory (`galleries/thumbs`
+by default, or `galleries/<directory>/thumbs` when the original was stored in a
+sub-directory) and are deleted together with the image.
 
 Thumbnail generation requires `intervention/image`, which this package pulls
 in, plus the GD or Imagick extension. Pick the driver via Laravel's
 `config/images.php` (`gd` by default).
 
 To move the work off the request, set `thumbnails.queue` to `true` and the
-`GenerateGalleryThumbnail` job is dispatched after the upload commits:
+`GenerateGalleryThumbnail` (or `GenerateGalleryCoverThumbnail`) job is
+dispatched after the upload commits:
 
 ```php
 'thumbnails' => [
@@ -183,7 +203,7 @@ Generate the missing ones later (for example after enabling the feature on an
 existing install, or after changing the dimensions) with:
 
 ```bash
-php artisan gallery:thumbnails           # images without a thumbnail
+php artisan gallery:thumbnails           # images and covers without a thumbnail
 php artisan gallery:thumbnails --force   # regenerate all thumbnails
 php artisan gallery:thumbnails --queue   # dispatch a job per image instead
 ```
@@ -205,8 +225,27 @@ $image = app(StoreGalleryImage::class)($gallery, $request->file('photo'), [
 ]);
 ```
 
-`sort_order` is appended to the end of the gallery when omitted. To
-(re)generate a single thumbnail, invoke `GenerateThumbnail` with the image.
+`sort_order` is appended to the end of the gallery when omitted.
+
+By default uploads land directly in the configured `path`. Pass a `directory`
+to group them, for example per gallery; the thumbnail follows the original:
+
+```php
+$image = app(StoreGalleryImage::class)($gallery, $file, [], directory: $gallery->slug);
+// galleries/summer-photos/abc123.jpg + galleries/summer-photos/thumbs/def456.webp
+```
+
+Gallery covers go through the `StoreGalleryCover` action, which also removes
+the previous cover and its thumbnail:
+
+```php
+use Jgawlik\LaravelGallery\Actions\StoreGalleryCover;
+
+app(StoreGalleryCover::class)($gallery, $request->file('cover'), directory: 'covers');
+```
+
+To (re)generate a single thumbnail, invoke `GenerateThumbnail` with the image
+or the gallery.
 
 ## Testing
 

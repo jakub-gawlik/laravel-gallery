@@ -26,4 +26,22 @@ class GalleryFactory extends Factory
             'description' => $this->faker->sentence(),
         ];
     }
+
+    public function withImage(): static
+    {
+        return $this->state(fn (): array => [
+            'image_path' => 'galleries/'.$this->faker->uuid().'.jpg',
+            'image_width' => 1600,
+            'image_height' => 900,
+        ]);
+    }
+
+    public function withImageThumbnail(): static
+    {
+        return $this->withImage()->state(fn (): array => [
+            'image_thumbnail_path' => 'galleries/thumbs/'.$this->faker->uuid().'.webp',
+            'image_thumbnail_width' => 800,
+            'image_thumbnail_height' => 450,
+        ]);
+    }
 }

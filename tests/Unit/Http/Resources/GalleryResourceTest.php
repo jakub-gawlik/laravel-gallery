@@ -25,6 +25,11 @@ it('transforms a gallery without an image', function () {
         ->and($data['slug'])->toBe($gallery->slug)
         ->and($data['description'])->toBe($gallery->description)
         ->and($data['image_url'])->toBeNull()
+        ->and($data['image_width'])->toBeNull()
+        ->and($data['image_height'])->toBeNull()
+        ->and($data['image_thumbnail_url'])->toBeNull()
+        ->and($data['image_thumbnail_width'])->toBeNull()
+        ->and($data['image_thumbnail_height'])->toBeNull()
         ->and(array_key_exists('images', $data))->toBeFalse();
 });
 
@@ -34,13 +39,39 @@ it('transforms a gallery with an image url', function () {
 
     $gallery = Gallery::factory()->create([
         'image_path' => 'galleries/cover.jpg',
+        'image_width' => 1600,
+        'image_height' => 900,
     ]);
 
     /** @var array<string, mixed> $resource */
     $resource = (new GalleryResource($gallery))->toArray(new Request);
 
-    expect($resource['image_url'])
-        ->toBe(Storage::disk('public')->url('galleries/cover.jpg'));
+    expect($resource['image_url'])->toBe(Storage::disk('public')->url('galleries/cover.jpg'))
+        ->and($resource['image_width'])->toBe(1600)
+        ->and($resource['image_height'])->toBe(900)
+        ->and($resource['image_thumbnail_url'])->toBe($resource['image_url'])
+        ->and($resource['image_thumbnail_width'])->toBe(1600)
+        ->and($resource['image_thumbnail_height'])->toBe(900);
+});
+
+it('transforms a gallery with a cover thumbnail', function () {
+    /** @var TestCase $this */
+    Storage::fake('public');
+
+    $gallery = Gallery::factory()->withImageThumbnail()->create([
+        'image_path' => 'galleries/cover.jpg',
+        'image_thumbnail_path' => 'galleries/thumbs/cover.webp',
+    ]);
+
+    /** @var array<string, mixed> $resource */
+    $resource = (new GalleryResource($gallery))->toArray(new Request);
+
+    expect($resource['image_url'])->toBe(Storage::disk('public')->url('galleries/cover.jpg'))
+        ->and($resource['image_width'])->toBe(1600)
+        ->and($resource['image_height'])->toBe(900)
+        ->and($resource['image_thumbnail_url'])->toBe(Storage::disk('public')->url('galleries/thumbs/cover.webp'))
+        ->and($resource['image_thumbnail_width'])->toBe(800)
+        ->and($resource['image_thumbnail_height'])->toBe(450);
 });
 
 it('includes images when loaded', function () {
