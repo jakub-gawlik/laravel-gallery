@@ -6,6 +6,7 @@ namespace Jgawlik\LaravelGallery;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Jgawlik\LaravelGallery\Console\Commands\GenerateThumbnails;
 use Jgawlik\LaravelGallery\Models\Gallery;
 use Jgawlik\LaravelGallery\Models\GalleryImage;
 use Jgawlik\LaravelGallery\Policies\GalleryImagePolicy;
@@ -30,6 +31,8 @@ class GalleryServiceProvider extends ServiceProvider
         Gate::policy(GalleryImage::class, GalleryImagePolicy::class);
 
         if ($this->app->runningInConsole()) {
+            $this->commands([GenerateThumbnails::class]);
+
             $this->publishes([
                 __DIR__.'/../config/gallery.php' => $this->app->configPath('gallery.php'),
             ], 'gallery-config');

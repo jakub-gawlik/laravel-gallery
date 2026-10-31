@@ -21,7 +21,7 @@ This document outlines the planned evolution of `jgawlik/laravel-gallery` from a
 - [ ] Support image reordering via `PUT /api/v1/galleries/{gallery}/images/reorder`.
 - [ ] Add bulk image deletion.
 - [ ] Add `alt_text` and `caption` handling to image uploads.
-- [ ] Generate responsive image variants (thumbnail, webp) behind a config flag.
+- [x] Generate responsive image variants (thumbnail, webp) behind a config flag.
 - [ ] Add URL signing helpers for private disks.
 - [ ] Maintain Pest coverage at 100% and PHPStan level 7+ as new features land.
 

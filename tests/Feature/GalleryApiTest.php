@@ -205,6 +205,30 @@ it('uploads multiple images to a gallery', function () {
         ->assertJsonPath('data.1.description', null);
 });
 
+it('generates thumbnails for uploaded images', function () {
+    /** @var TestCase $this */
+    Storage::fake('public');
+
+    $gallery = Gallery::factory()->create();
+
+    $response = $this->postJson("/api/v1/galleries/{$gallery->id}/images", [
+        'images' => [
+            ['file' => UploadedFile::fake()->image('one.jpg', 1600, 900), 'title' => 'Wide'],
+        ],
+    ])->assertCreated();
+
+    $image = GalleryImage::firstOrFail();
+
+    expect($image->thumbnail_path)->toStartWith('galleries/thumbs/');
+    Storage::disk('public')->assertExists((string) $image->thumbnail_path);
+
+    $response->assertJsonPath('data.0.width', 1600)
+        ->assertJsonPath('data.0.height', 900)
+        ->assertJsonPath('data.0.thumbnail_url', Storage::disk('public')->url((string) $image->thumbnail_path))
+        ->assertJsonPath('data.0.thumbnail_width', 800)
+        ->assertJsonPath('data.0.thumbnail_height', 450);
+});
+
 it('shows gallery images on the gallery response', function () {
     /** @var TestCase $this */
     $gallery = Gallery::factory()->create();

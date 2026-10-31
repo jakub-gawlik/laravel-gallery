@@ -13,7 +13,12 @@ it('has the correct fillable attributes', function () {
     expect($image->getFillable())->toBe([
         'gallery_id',
         'path',
+        'thumbnail_path',
         'disk',
+        'width',
+        'height',
+        'thumbnail_width',
+        'thumbnail_height',
         'title',
         'description',
         'alt_text',
@@ -99,4 +104,51 @@ it('delegates ownership to its gallery', function () {
 
     expect($image->isOwnedBy(galleryUser(1)))->toBeTrue()
         ->and($image->isOwnedBy(galleryUser(2)))->toBeFalse();
+});
+
+it('deletes the thumbnail from disk when deleted', function () {
+    /** @var TestCase $this */
+    Storage::fake('public');
+
+    $image = GalleryImage::factory()->withThumbnail()->create();
+
+    Storage::disk('public')->put($image->path, 'content');
+    Storage::disk('public')->put((string) $image->thumbnail_path, 'thumb');
+
+    $image->delete();
+
+    Storage::disk('public')->assertMissing($image->path);
+    Storage::disk('public')->assertMissing((string) $image->thumbnail_path);
+});
+
+it('resolves the disk name with a public fallback', function () {
+    expect(GalleryImage::factory()->make(['disk' => 's3'])->diskName())->toBe('s3')
+        ->and(GalleryImage::factory()->make(['disk' => null])->diskName())->toBe('public');
+});
+
+it('exposes the original and thumbnail urls', function () {
+    /** @var TestCase $this */
+    Storage::fake('public');
+
+    $image = GalleryImage::factory()->withThumbnail()->make([
+        'path' => 'galleries/photo.jpg',
+        'thumbnail_path' => 'galleries/thumbs/photo.webp',
+    ]);
+
+    expect($image->hasThumbnail())->toBeTrue()
+        ->and($image->url())->toBe(Storage::disk('public')->url('galleries/photo.jpg'))
+        ->and($image->thumbnailUrl())->toBe(Storage::disk('public')->url('galleries/thumbs/photo.webp'));
+});
+
+it('falls back to the original url when there is no thumbnail', function () {
+    /** @var TestCase $this */
+    Storage::fake('public');
+
+    $image = GalleryImage::factory()->make([
+        'path' => 'galleries/photo.jpg',
+        'thumbnail_path' => null,
+    ]);
+
+    expect($image->hasThumbnail())->toBeFalse()
+        ->and($image->thumbnailUrl())->toBe($image->url());
 });

@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Ownable` contract implemented by `Gallery` and `GalleryImage` (`isOwnedBy()`).
+- Thumbnail generation for gallery images via Laravel's `Image` facade, configured under `gallery.thumbnails` (dimensions, format, quality, sub-directory, queueing, on/off switch).
+- Migration adding `thumbnail_path`, `width`, `height`, `thumbnail_width` and `thumbnail_height` to `gallery_images`.
+- `StoreGalleryImage` action encapsulating the upload flow (store original, detect dimensions, generate thumbnail) so host apps can reuse it outside the package controller.
+- `GenerateThumbnail` action and `GenerateGalleryThumbnail` queued job.
+- `gallery:thumbnails` artisan command to backfill (`--force` to regenerate, `--queue` to dispatch jobs).
+- `GalleryImageResource` now exposes `width`, `height`, `thumbnail_url`, `thumbnail_width` and `thumbnail_height`; the `thumbnail_*` fields fall back to the original when no thumbnail exists.
+- `GalleryImage::url()`, `thumbnailUrl()`, `hasThumbnail()`, `diskName()` and `deleteFiles()` helpers; deleting an image now removes its thumbnail too.
+- `GalleryImageFactory::withThumbnail()` state.
+- New dependency on `intervention/image` (^4.0), required by Laravel's GD/Imagick image drivers.
 
 ## [1.0.0] - 2026-07-28
 

@@ -10,7 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
+use Jgawlik\LaravelGallery\Actions\StoreGalleryImage;
 use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryImagesRequest;
 use Jgawlik\LaravelGallery\Http\Requests\UpdateGalleryImageRequest;
 use Jgawlik\LaravelGallery\Http\Resources\GalleryImageResource;
@@ -23,24 +23,18 @@ class GalleryImageController extends Controller
     /**
      * @throws \Throwable
      */
-    public function store(StoreGalleryImagesRequest $request, Gallery $gallery): JsonResponse
-    {
+    public function store(
+        StoreGalleryImagesRequest $request,
+        Gallery $gallery,
+        StoreGalleryImage $storeImage
+    ): JsonResponse {
         Gate::authorize('create', [GalleryImage::class, $gallery]);
 
+        /** @var list<GalleryImage> $storedImages */
         $storedImages = [];
-        $writtenFiles = [];
-        $disk = (string) config('gallery.disk', 'public');
-        $path = (string) config('gallery.path', 'galleries');
 
         try {
-            DB::transaction(function () use (
-                $request,
-                $gallery,
-                $disk,
-                $path,
-                &$storedImages,
-                &$writtenFiles
-            ): void {
+            DB::transaction(function () use ($request, $gallery, $storeImage, &$storedImages): void {
                 $startOrder = (int) $gallery->images()
                     ->lockForUpdate()
                     ->max('sort_order');
@@ -52,17 +46,7 @@ class GalleryImageController extends Controller
                         throw new RuntimeException('Failed to store gallery image.');
                     }
 
-                    $filePath = $file->store($path, $disk);
-
-                    if ($filePath === false) {
-                        throw new RuntimeException('Failed to store gallery image.');
-                    }
-
-                    $writtenFiles[] = $filePath;
-
-                    $storedImages[] = $gallery->images()->create([
-                        'path' => $filePath,
-                        'disk' => $disk,
+                    $storedImages[] = $storeImage($gallery, $file, [
                         'title' => $image['title'] ?? null,
                         'description' => $image['description'] ?? null,
                         'sort_order' => $startOrder + $index + 1,
@@ -70,8 +54,8 @@ class GalleryImageController extends Controller
                 }
             });
         } catch (\Throwable $e) {
-            foreach ($writtenFiles as $filePath) {
-                Storage::disk($disk)->delete($filePath);
+            foreach ($storedImages as $image) {
+                $image->deleteFiles();
             }
             throw $e;
         }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Jgawlik\LaravelGallery\GalleryServiceProvider;
@@ -16,7 +17,21 @@ it('merges the gallery config', function () {
     /** @var TestCase $this */
     expect(config('gallery.disk'))->toBe('public')
         ->and(config('gallery.path'))->toBe('galleries')
-        ->and(config('gallery.middleware'))->toBe(['api', 'auth']);
+        ->and(config('gallery.middleware'))->toBe(['api', 'auth'])
+        ->and(config('gallery.thumbnails'))->toBe([
+            'enabled' => true,
+            'width' => 800,
+            'height' => 450,
+            'format' => 'webp',
+            'quality' => 75,
+            'path' => 'thumbs',
+            'queue' => false,
+        ]);
+});
+
+it('registers the thumbnails command', function () {
+    /** @var TestCase $this */
+    expect(Artisan::all())->toHaveKey('gallery:thumbnails');
 });
 
 it('loads the package routes', function () {

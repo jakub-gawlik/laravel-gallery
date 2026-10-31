@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Storage;
+use Jgawlik\LaravelGallery\Actions\StoreGalleryImage;
 use Jgawlik\LaravelGallery\Http\Controllers\GalleryImageController;
 use Jgawlik\LaravelGallery\Http\Requests\StoreGalleryImagesRequest;
 use Jgawlik\LaravelGallery\Models\Gallery;
@@ -67,7 +69,7 @@ it('throws when storing a gallery image fails', function () {
 
     $controller = new GalleryImageController;
 
-    expect(fn () => $controller->store($request, $gallery))
+    expect(fn () => $controller->store($request, $gallery, app(StoreGalleryImage::class)))
         ->toThrow(RuntimeException::class, 'Failed to store gallery image.');
 });
 
@@ -109,7 +111,7 @@ it('throws when the uploaded file cannot be resolved', function () {
 
     $controller = new GalleryImageController;
 
-    expect(fn () => $controller->store($request, $gallery))
+    expect(fn () => $controller->store($request, $gallery, app(StoreGalleryImage::class)))
         ->toThrow(RuntimeException::class, 'Failed to store gallery image.');
 });
 
@@ -117,6 +119,7 @@ it('cleans up already stored files when a later image fails to store', function 
     /** @var TestCase $this */
     $this->actingAs(galleryUser());
     Storage::fake('public');
+    Exceptions::fake();
 
     $gallery = Gallery::factory()->create(['user_id' => 1]);
 
@@ -191,7 +194,7 @@ it('cleans up already stored files when a later image fails to store', function 
 
     $controller = new GalleryImageController;
 
-    expect(fn () => $controller->store($request, $gallery))
+    expect(fn () => $controller->store($request, $gallery, app(StoreGalleryImage::class)))
         ->toThrow(RuntimeException::class, 'Failed to store gallery image.');
 
     Storage::disk('public')->assertMissing($existingPath);
